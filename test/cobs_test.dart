@@ -4,7 +4,7 @@ import 'dart:typed_data';
 import 'package:collection/collection.dart';
 import 'package:test/test.dart';
 
-import 'package:cobs/cobs.dart';
+import 'package:cobs2/cobs2.dart';
 
 void main() {
   Function eq = const ListEquality().equals;
