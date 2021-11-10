@@ -1,8 +1,15 @@
+
+
 # Consistent Overhead Byte Stuffing (COBS) implementation in Dart.
+
+This package is a fork of https://github.com/jimshepherd/cobs-dart and
+includes null-safety.
 
 This package is a Dart port of original COBS implementation in C
 by Craig McQueen and influenced by the Java implementation by
 TheMarpe (https://github.com/themarpe)
+
+[![pub package](https://img.shields.io/pub/v/cobs2.svg)](https://pub.dev/packages/cobs2)
 
 # Intro
 
