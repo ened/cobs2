@@ -123,7 +123,7 @@ EncodeResult encodeCOBS(
     encodedWriteCounter = encodedEndCounter;
 
     return EncodeResult(
-      outLen: encodedCodeWriteCounter,
+      outLen: encodedWriteCounter,
       status: EncodeStatus.OUT_BUFFER_OVERFLOW,
     );
   } else {
@@ -132,7 +132,7 @@ EncodeResult encodeCOBS(
   }
 
   /* Calculate the output length, from the value of dst_code_write_ptr */
-  return EncodeResult(outLen: encodedCodeWriteCounter);
+  return EncodeResult(outLen: encodedWriteCounter);
 }
 
 /// Decode [source] to [decoded] using COBS and return [DecodeResult] status.
