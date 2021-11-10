@@ -9,6 +9,8 @@ This package is a Dart port of original COBS implementation in C
 by Craig McQueen and influenced by the Java implementation by
 TheMarpe (https://github.com/themarpe)
 
+[![pub package](https://img.shields.io/pub/v/cobs2.svg)](https://pub.dev/packages/cobs2)
+
 # Intro
 
 A library is provided, which contains functions for encoding and decoding
