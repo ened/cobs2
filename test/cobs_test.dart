@@ -10,24 +10,8 @@ void main() {
   Function eq = const ListEquality().equals;
 
   group('Encode and decode byte data using COBS', () {
-    test('encodeCOBS returns error with null source data', () {
-      ByteData source;
-      var encoded = ByteData(1);
-      EncodeResult encodeResult = encodeCOBS(encoded, source);
-      expect(encodeResult.status, EncodeStatus.NULL_POINTER);
-      expect(encodeResult.outLen, 0);
-    });
-
-    test('decodeCOBS returns error with null source data', () {
-      ByteData source;
-      var decoded = ByteData(1);
-      DecodeResult decodeResult = decodeCOBS(decoded, source);
-      expect(decodeResult.status, DecodeStatus.NULL_POINTER);
-      expect(decodeResult.outLen, 0);
-    });
-
     test('encode / decode all zeroes data', () {
-      var data = new Uint8List.fromList([0, 0, 0, 0]);
+      var data = Uint8List.fromList([0, 0, 0, 0]);
       var initData = ByteData.view(data.buffer);
       ByteData encoded = ByteData(encodeDstBufMaxLen(initData.lengthInBytes));
       expect(encoded.lengthInBytes, 5);
@@ -47,7 +31,7 @@ void main() {
     });
 
     test('encode / decode data with no zeroes', () {
-      var data = new Uint8List.fromList([1, 2, 3, 4, 5]);
+      var data = Uint8List.fromList([1, 2, 3, 4, 5]);
       var initData = ByteData.view(data.buffer);
       ByteData encoded = ByteData(encodeDstBufMaxLen(initData.lengthInBytes));
       expect(encoded.lengthInBytes, 6);
@@ -67,7 +51,7 @@ void main() {
     });
 
     test('encode / decode data with zero at end', () {
-      var data = new Uint8List.fromList([1, 2, 3, 4, 5, 0]);
+      var data = Uint8List.fromList([1, 2, 3, 4, 5, 0]);
       var initData = ByteData.view(data.buffer);
       ByteData encoded = ByteData(encodeDstBufMaxLen(initData.lengthInBytes));
       expect(encoded.lengthInBytes, 7);
@@ -87,7 +71,7 @@ void main() {
     });
 
     test('encode / decode data with embedded zero', () {
-      var data = new Uint8List.fromList([1, 2, 3, 4, 5, 0, 6, 7, 8, 9]);
+      var data = Uint8List.fromList([1, 2, 3, 4, 5, 0, 6, 7, 8, 9]);
       var initData = ByteData.view(data.buffer);
       ByteData encoded = ByteData(encodeDstBufMaxLen(initData.lengthInBytes));
       expect(encoded.lengthInBytes, 11);
@@ -107,7 +91,7 @@ void main() {
     });
 
     test('encode / decode data with embedded zero and zero at end', () {
-      var data = new Uint8List.fromList([1, 2, 3, 4, 5, 0, 6, 7, 8, 9, 0]);
+      var data = Uint8List.fromList([1, 2, 3, 4, 5, 0, 6, 7, 8, 9, 0]);
       var initData = ByteData.view(data.buffer);
       ByteData encoded = ByteData(encodeDstBufMaxLen(initData.lengthInBytes));
       expect(encoded.lengthInBytes, 12);
@@ -127,7 +111,7 @@ void main() {
     });
 
     test('encode / decode data with 253 bytes', () {
-      var data = new Uint8List.fromList([
+      var data = Uint8List.fromList([
         1,
         2,
         3,
@@ -401,7 +385,7 @@ void main() {
     });
 
     test('encode / decode data with 254 bytes', () {
-      var data = new Uint8List.fromList([
+      var data = Uint8List.fromList([
         1,
         2,
         3,
@@ -676,7 +660,7 @@ void main() {
     });
 
     test('encode / decode data with 255 bytes', () {
-      var data = new Uint8List.fromList([
+      var data = Uint8List.fromList([
         1,
         2,
         3,
@@ -953,7 +937,7 @@ void main() {
     });
 
     test('encode withZero appends zero byte', () {
-      var data = new Uint8List.fromList([1, 2, 3, 4, 5]);
+      var data = Uint8List.fromList([1, 2, 3, 4, 5]);
       var initData = ByteData.view(data.buffer);
       ByteData encoded =
           ByteData(encodeDstBufMaxLen(initData.lengthInBytes, withZero: true));
@@ -968,13 +952,13 @@ void main() {
 
   group('Decode ByteData stream using decodeCOBSStream', () {
     test('decode stream of a complete packet', () async {
-      var data = new Uint8List.fromList([1, 2, 3, 4, 5, 0, 6, 7, 8, 9, 0]);
+      var data = Uint8List.fromList([1, 2, 3, 4, 5, 0, 6, 7, 8, 9, 0]);
       var initData = ByteData.view(data.buffer);
       ByteData encoded =
           ByteData(encodeDstBufMaxLen(initData.lengthInBytes, withZero: true));
       expect(encoded.lengthInBytes, 13);
 
-      var controller = new StreamController<ByteData>();
+      var controller = StreamController<ByteData>();
       var decoder = decodeCOBSStream(controller.stream);
 
       EncodeResult encodeResult = encodeCOBS(encoded, initData, withZero: true);
@@ -990,7 +974,7 @@ void main() {
     });
 
     test('decode stream of two incomplete packets', () async {
-      var data = new Uint8List.fromList([1, 2, 3, 4, 5, 0, 6, 7, 8, 9, 0]);
+      var data = Uint8List.fromList([1, 2, 3, 4, 5, 0, 6, 7, 8, 9, 0]);
       var initData = ByteData.view(data.buffer);
 
       ByteData encoded =
@@ -1004,7 +988,7 @@ void main() {
       var first = encoded.buffer.asByteData(0, 4);
       var second = encoded.buffer.asByteData(4);
 
-      var controller = new StreamController<ByteData>();
+      var controller = StreamController<ByteData>();
       var decoder = decodeCOBSStream(controller.stream);
 
       controller.sink.add(first);

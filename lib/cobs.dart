@@ -11,8 +11,13 @@ enum EncodeStatus {
 
 /// Status and length container of [encodeCOBS()] result.
 class EncodeResult {
-  int outLen;
-  EncodeStatus status;
+  final int outLen;
+  final EncodeStatus status;
+
+  const EncodeResult({
+    this.outLen = 0,
+    this.status = EncodeStatus.OK,
+  });
 }
 
 /// [decodeCOBS()] status types.
@@ -26,8 +31,13 @@ enum DecodeStatus {
 
 /// Status and length container of [decodeCOBS()] result.
 class DecodeResult {
-  int outLen;
-  DecodeStatus status;
+  final int outLen;
+  final DecodeStatus status;
+
+  const DecodeResult({
+    this.outLen = 0,
+    this.status = DecodeStatus.OK,
+  });
 }
 
 /// Determine maximum encoded byte length for source containing [srcLen] bytes.
@@ -49,17 +59,11 @@ int decodeDstBufMaxLen(int srcLen) {
 /// The [EncodeResult] instance returned will include the actual length of the
 /// encoded byte array in [outLen] and the status of the encoding attempt in
 /// [status].
-EncodeResult encodeCOBS(ByteData encoded, ByteData source,
-    {bool withZero = false}) {
-  EncodeResult result = new EncodeResult();
-  result.outLen = 0;
-  result.status = EncodeStatus.OK;
-
-  if (encoded == null || source == null) {
-    result.status = EncodeStatus.NULL_POINTER;
-    return result;
-  }
-
+EncodeResult encodeCOBS(
+  ByteData encoded,
+  ByteData source, {
+  bool withZero = false,
+}) {
   int encodedWriteCounter = 1;
   int encodedCodeWriteCounter = 0;
   int encodedEndCounter = encoded.lengthInBytes;
@@ -74,8 +78,7 @@ EncodeResult encodeCOBS(ByteData encoded, ByteData source,
     while (true) {
       /* Check for running out of output buffer space */
       if (encodedWriteCounter >= encodedEndCounter) {
-        result.status = EncodeStatus.OUT_BUFFER_OVERFLOW;
-        break;
+        return EncodeResult(status: EncodeStatus.OUT_BUFFER_OVERFLOW);
       }
 
       int sourceByte = source.getUint8(sourceCounter++);
@@ -117,17 +120,19 @@ EncodeResult encodeCOBS(ByteData encoded, ByteData source,
    */
   if (encodedCodeWriteCounter >= encodedEndCounter) {
     /* We've run out of output buffer to write the code byte. */
-    result.status = EncodeStatus.OUT_BUFFER_OVERFLOW;
     encodedWriteCounter = encodedEndCounter;
+
+    return EncodeResult(
+      outLen: encodedWriteCounter,
+      status: EncodeStatus.OUT_BUFFER_OVERFLOW,
+    );
   } else {
     /* Write the last code (length) byte. */
     encoded.setUint8(encodedCodeWriteCounter, searchLen & 0xFF);
   }
 
   /* Calculate the output length, from the value of dst_code_write_ptr */
-  result.outLen = encodedWriteCounter;
-
-  return result;
+  return EncodeResult(outLen: encodedWriteCounter);
 }
 
 /// Decode [source] to [decoded] using COBS and return [DecodeResult] status.
@@ -136,16 +141,6 @@ EncodeResult encodeCOBS(ByteData encoded, ByteData source,
 /// decoded byte array in [outLen] and the status of the decoding attempt in
 /// [status].
 DecodeResult decodeCOBS(ByteData decoded, ByteData source) {
-  DecodeResult result = new DecodeResult();
-  result.outLen = 0;
-  result.status = DecodeStatus.OK;
-
-  /* First, do a NULL check and return immediately if it fails. */
-  if (decoded == null || source == null) {
-    result.status = DecodeStatus.NULL_POINTER;
-    return result;
-  }
-
   int sourceCounter = 0;
   int sourceEndCounter = source.lengthInBytes;
   int decodedEndCounter = decoded.lengthInBytes;
@@ -155,33 +150,34 @@ DecodeResult decodeCOBS(ByteData decoded, ByteData source) {
   int i;
   int lengthCode;
 
+  var decodeStatus = DecodeStatus.OK;
+
   if (source.lengthInBytes != 0) {
     while (true) {
       lengthCode = source.getUint8(sourceCounter++);
       if (lengthCode == 0) {
-        result.status = DecodeStatus.ZERO_BYTE_IN_INPUT;
-        break;
+        return DecodeResult(status: DecodeStatus.ZERO_BYTE_IN_INPUT);
       }
       lengthCode--;
 
       /* Check length code against remaining input bytes */
       remainingBytes = sourceEndCounter - sourceCounter;
       if (lengthCode > remainingBytes) {
-        result.status = DecodeStatus.INPUT_TOO_SHORT;
+        decodeStatus = DecodeStatus.INPUT_TOO_SHORT;
         lengthCode = remainingBytes;
       }
 
       /* Check length code against remaining output buffer space */
       remainingBytes = decodedEndCounter - decodedWriteCounter;
       if (lengthCode > remainingBytes) {
-        result.status = DecodeStatus.OUT_BUFFER_OVERFLOW;
+        decodeStatus = DecodeStatus.OUT_BUFFER_OVERFLOW;
         lengthCode = remainingBytes;
       }
 
       for (i = lengthCode; i != 0; i--) {
         sourceByte = source.getUint8(sourceCounter++);
         if (sourceByte == 0) {
-          result.status = DecodeStatus.ZERO_BYTE_IN_INPUT;
+          decodeStatus = DecodeStatus.ZERO_BYTE_IN_INPUT;
         }
         decoded.setUint8(decodedWriteCounter++, sourceByte);
       }
@@ -193,7 +189,7 @@ DecodeResult decodeCOBS(ByteData decoded, ByteData source) {
       /* Add a zero to the end */
       if (lengthCode != 0xFE) {
         if (decodedWriteCounter >= decodedEndCounter) {
-          result.status = DecodeStatus.OUT_BUFFER_OVERFLOW;
+          decodeStatus = DecodeStatus.OUT_BUFFER_OVERFLOW;
           break;
         }
         decoded.setUint8(decodedWriteCounter++, 0);
@@ -201,8 +197,7 @@ DecodeResult decodeCOBS(ByteData decoded, ByteData source) {
     }
   }
 
-  result.outLen = decodedWriteCounter;
-  return result;
+  return DecodeResult(outLen: decodedWriteCounter, status: decodeStatus);
 }
 
 /// Decodes a stream of COBS-encoded bytes into packets of decoded bytes.
@@ -212,7 +207,7 @@ Stream<ByteData> decodeCOBSStream(Stream<ByteData> source) async* {
   // Stores any partial packets from the previous chunk.
   var partial = ByteData(0);
 
-  // Wait until a new chunk is available, then process it.
+  // Wait until a chunk is available, then process it.
   await for (var chunk in source) {
     // Get index of 0x00 byte if found
     var offset = 0;
